@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#141311">
+<title>Self-Change</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#141311; --surface:#1d1a17; --surface2:#242019; --border:#332d24;
+  --text:#f3eee5; --text2:#8c8275; --accent:#e8984a; --accent2:#6fb6a0; --danger:#d9666a;
+  --radius:16px; --radius-sm:11px;
+  --f-display:'Space Grotesk',system-ui,sans-serif;
+  --f-body:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --f-mono:ui-monospace,'SF Mono','Cascadia Code','Roboto Mono',Menlo,monospace;
+}
+:root[data-theme="light"]{
+  --bg:#f6f3ee; --surface:#ffffff; --surface2:#efeae1; --border:#e3dcd0;
+  --text:#1c1812; --text2:#79705f;
+}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{height:100%;font-family:var(--f-body);background:var(--bg);color:var(--text);padding-bottom:88px;transition:background .25s,color .25s;}
+
+.header{position:sticky;top:env(safe-area-inset-top,0px);z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-family:var(--f-display);font-size:19px;font-weight:700;letter-spacing:-.02em;}
+.logo b{color:var(--accent);font-weight:700;}
+.theme-btn{background:var(--surface);border:1px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;}
+.theme-btn:active{transform:scale(.92);}
+
+.container{max-width:720px;margin:0 auto;padding:18px;}
+.page{display:none;} .page.active{display:block;}
+.page-h{font-family:var(--f-display);font-size:21px;font-weight:700;margin-bottom:16px;}
+
+.term-win{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:18px;}
+.term-bar{display:flex;align-items:center;gap:6px;padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border);}
+.term-dot{width:9px;height:9px;border-radius:50%;}
+.term-dot.r{background:#e85c5c;} .term-dot.y{background:#e8b84a;} .term-dot.g{background:var(--accent2);}
+.term-path{margin-left:6px;font-family:var(--f-mono);font-size:11px;color:var(--text2);}
+.term-body{padding:20px;}
+.term-line{font-family:var(--f-mono);font-size:15px;color:var(--text);}
+.term-prompt{color:var(--accent2);}
+.cursor{display:inline-block;width:8px;height:1.05em;background:var(--accent2);margin-left:2px;vertical-align:text-bottom;animation:blink 1.1s step-end infinite;}
+@keyframes blink{50%{opacity:0;}}
+.term-comment{font-family:var(--f-mono);font-size:12px;color:var(--text2);margin:6px 0 16px;}
+.hero-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.lv-badge,.day-badge{font-size:12px;font-weight:600;padding:5px 11px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text);}
+.lv-badge{color:var(--accent);border-color:var(--accent);}
+.ring-mini{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-left:auto;position:relative;flex-shrink:0;background:var(--surface2);}
+.ring-mini::before{content:'';position:absolute;inset:4px;background:var(--surface);border-radius:50%;}
+.ring-mini span{position:relative;z-index:1;font-weight:700;font-size:11px;color:var(--accent2);}
+.ring-mini.pulse{animation:pulse 1.1s ease;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(111,182,160,.55);}100%{box-shadow:0 0 0 14px rgba(111,182,160,0);}}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px;}
+.card:active{transform:scale(.99);}
+.card-title{font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.card-title small{font-size:12px;color:var(--text2);font-weight:500;}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:15px;}
+.stat-label{font-size:12px;color:var(--text2);margin-bottom:5px;}
+.stat-value{font-family:var(--f-display);font-size:23px;font-weight:700;}
+.stat-value.teal{color:var(--accent2);} .stat-value.amber{color:var(--accent);}
+
+.habit-item{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border);}
+.habit-item:last-child{border-bottom:none;}
+.habit-left{display:flex;align-items:center;gap:12px;}
+.habit-check{width:25px;height:25px;border-radius:8px;border:2px solid var(--border);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.habit-check.done{background:var(--accent2);border-color:var(--accent2);}
+.habit-check.done::after{content:'✓';color:#14110d;font-weight:800;font-size:15px;}
+.habit-name{font-size:15px;} .habit-name.done{color:var(--text2);text-decoration:line-through;}
+.habit-streak{font-family:var(--f-display);font-size:12px;color:var(--accent);font-weight:700;}
+
+.btn{background:var(--accent);color:#14110d;border:none;padding:13px 20px;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;}
+.btn:active{transform:scale(.97);}
+.btn.ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--danger);}
+
+.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--bg);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px));}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px;cursor:pointer;color:var(--text2);font-size:10px;font-weight:600;background:none;border:none;font-family:inherit;}
+.tab.active{color:var(--accent);}
+.tab svg{width:21px;height:21px;}
+
+.badge{display:inline-block;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;margin:0 6px 6px 0;border:1px solid var(--border);}
+.badge.on{color:var(--accent2);border-color:var(--accent2);} .badge.off{color:var(--text2);}
+
+.acc{border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:10px;overflow:hidden;}
+.acc-head{padding:15px;background:var(--surface);cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:14px;}
+.acc-head span{color:var(--text2);}
+.acc-body{max-height:0;overflow:hidden;transition:max-height .25s ease;background:var(--surface2);}
+.acc-body.open{max-height:2000px;}
+.acc-content{padding:16px;font-size:13.5px;line-height:1.7;}
+.acc-content ul{padding-left:18px;margin:6px 0;} .acc-content li{margin-bottom:5px;}
+.acc-content strong{color:var(--accent2);}
+
+textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px;color:var(--text);font-family:inherit;font-size:14px;resize:vertical;min-height:96px;line-height:1.6;}
+textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+
+.stop-grid{display:grid;gap:11px;}
+.stop-card{background:var(--surface2);border-left:3px solid var(--accent);border-radius:var(--radius-sm);padding:15px;}
+.stop-letter{font-family:var(--f-display);font-size:26px;font-weight:800;color:var(--accent);line-height:1;margin-bottom:4px;}
+.stop-card h4{font-size:14px;font-weight:700;margin-bottom:5px;}
+.stop-card p{font-size:13px;color:var(--text2);line-height:1.6;}
+
+.toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--accent2);color:#14110d;padding:11px 22px;border-radius:30px;font-weight:700;font-size:13.5px;opacity:0;transition:all .3s;z-index:200;pointer-events:none;max-width:85%;text-align:center;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.mood-row{display:flex;gap:7px;justify-content:space-between;margin:10px 0 4px;}
+.mood-btn{flex:1;aspect-ratio:1;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);font-size:21px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.mood-btn:active{transform:scale(.94);}
+.mood-btn.selected{background:var(--accent);border-color:var(--accent);}
+.mood-trail{display:flex;gap:6px;margin-top:10px;font-size:15px;}
+.mood-trail span{flex:1;text-align:center;opacity:.55;}
+
+.wk-chart{display:flex;justify-content:space-between;align-items:flex-end;height:84px;gap:5px;}
+.wk-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;}
+.wk-bar-wrap{flex:1;width:100%;display:flex;align-items:flex-end;}
+.wk-bar{width:100%;background:var(--surface2);border-radius:4px 4px 2px 2px;min-height:3px;}
+.wk-bar.today{background:var(--accent2);}
+.wk-label{font-size:10px;color:var(--text2);} .wk-label.today{color:var(--accent2);font-weight:700;}
+
+.mt-2{margin-top:12px;} .mb-2{margin-bottom:12px;} .text2{color:var(--text2);font-size:13px;}
+
+@media (prefers-reduced-motion: reduce){
+  .cursor{animation:none;opacity:1;}
+  .ring-mini.pulse{animation:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">self<b>change</b></div>
+  <button class="theme-btn" onclick="toggleTheme()" aria-label="Ganti tema">◐</button>
+</div>
+
+<div class="container">
+
+  <div class="page active" id="page-dash">
+    <div class="term-win">
+      <div class="term-bar">
+        <span class="term-dot r"></span><span class="term-dot y"></span><span class="term-dot g"></span>
+        <span class="term-path">~/self-change</span>
+      </div>
+      <div class="term-body">
+        <div class="term-line"><span class="term-prompt">&gt;</span> <span id="greeting">halo, bre</span><span class="cursor">_</span></div>
+        <div class="term-comment" id="dateText">// —</div>
+        <div class="hero-meta">
+          <span class="lv-badge" id="lvBadge">Level 1</span>
+          <span class="day-badge" id="dayCount">Hari 1</span>
+          <div class="ring-mini" id="ringDash"><span id="ringPct">0%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-label">Habit hari ini</div><div class="stat-value teal" id="statToday">0/10</div></div>
+      <div class="stat"><div class="stat-label">Streak terpanjang</div><div class="stat-value amber" id="statStreak">0</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">7 hari terakhir</div>
+      <div class="wk-chart" id="weekChart"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Checklist hari ini</div>
+      <div id="dashHabits"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Mindset hari ini</div>
+      <div class="text2" id="quoteBox">—</div>
+    </div>
+  </div>
+
+  <div class="page" id="page-fisik">
+    <h2 class="page-h">Program fisik</h2>
+
+    <div class="card">
+      <div class="card-title">Pemanasan <small>5 menit</small></div>
+      <div class="text2">Puter tangan 10x, puter pinggang 10x, puter lutut 10x, jalan di tempat 2 menit.</div>
+    </div>
+
+    <div class="acc" onclick="toggleAcc(this)">
+      <div class="acc-head">Fase 1: Fondasi & postur <span>▾</span></div>
+      <div class="acc-body"><div class="acc-content">
+        <p><strong>3x/minggu · 30 menit</strong></p>
+        <ul>
+          <li>Push-up — 3x5-10</li>
+          <li>Squat — 3x10-15</li>
+          <li>Glute bridge — 3x12-15</li>
+          <li>Plank — 3x20-30 detik</li>
+          <li>Superman — 3x10-12</li>
+          <li>Wall angel — 3x10</li>
+        </ul>
+        <p><strong>Cardio:</strong> jogging 20 menit, 2x/minggu</p>
+        <p><strong>Postur harian:</strong> chin tuck 3x10, wall stand 2 menit, cat-cow 10x</p>
+      </div></div>
+    </div>
+
+    <div class="acc" onclick="toggleAcc(this)">
+      <div class="acc-head">Fase 2: Progresif <span>▾</span></div>
+      <div class="acc-body"><div class="acc-content">
+        <p><strong>4x/minggu · 40 menit</strong></p>
+        <ul>
+          <li>Push-up variasi — 3x12-20</li>
+          <li>Squat beban — 3x15-20</li>
+          <li>Lunges — 3x10/kaki</li>
+          <li>Pull-up / inverted row — 3x5-10</li>
+          <li>Dips — 3x8-12</li>
+          <li>Plank — 3x45-60 detik</li>
+          <li>Leg raise — 3x10-15</li>
+          <li>Bird dog — 3x10/sisi</li>
+        </ul>
+        <p><strong>Tambahan:</strong> dead hang 3x30 detik</p>
+      </div></div>
+    </div>
+
+    <div class="acc" onclick="toggleAcc(this)">
+      <div class="acc-head">Fase 3: Kekuatan <span>▾</span></div>
+      <div class="acc-body"><div class="acc-content">
+        <p><strong>4-5x/minggu · 45 menit</strong></p>
+        <ul>
+          <li>Push-up berat — 3x8-15</li>
+          <li>Pistol / jumping squat — 3x8-12</li>
+          <li>Pull-up — 3x5-12</li>
+          <li>Dips — 3x10-15</li>
+          <li>Pike push-up — 3x8-12</li>
+          <li>Hanging leg raise — 3x8-12</li>
+          <li>Side plank — 3x60-90 detik</li>
+          <li>Burpees — 3x10</li>
+        </ul>
+      </div></div>
+    </div>
+
+    <div class="acc" onclick="toggleAcc(this)">
+      <div class="acc-head">Lentur dalam 4 minggu <span>▾</span></div>
+      <div class="acc-body"><div class="acc-content">
+        <p><strong>Minggu 1-2 (10-15 menit/hari):</strong></p>
+        <ul>
+          <li>Putar tangan 10x, dua arah</li>
+          <li>Putar pinggang 10x</li>
+          <li>Putar lutut 10x</li>
+          <li>Jalan di tempat 2 menit</li>
+          <li>Squat pelan 5x</li>
+          <li>Cat-cow 10x</li>
+          <li>Stretch paha, betis, hip — 3x30 detik</li>
+        </ul>
+        <p><strong>Minggu 3-4, tambah:</strong></p>
+        <ul>
+          <li>Push-up lutut 3x5-8</li>
+          <li>Plank 3x15-20 detik</li>
+          <li>Glute bridge 3x10</li>
+          <li>Squat 3x10 pelan</li>
+        </ul>
+      </div></div>
+    </div>
+
+    <div class="acc" onclick="toggleAcc(this)">
+      <div class="acc-head">Nutrisi <span>▾</span></div>
+      <div class="acc-body"><div class="acc-content">
+        <ul>
+          <li><strong>Protein</strong> — 1.2-1.5g/kg (telur, ayam, tempe, tahu, ikan)</li>
+          <li><strong>Karbo</strong> — nasi, kentang, oat</li>
+          <li><strong>Air</strong> — minimal 2L/hari</li>
+          <li><strong>Kurangi</strong> — gorengan, mie instan, minuman manis</li>
+          <li><strong>Buat tinggi</strong> — susu, jemur pagi 10-15 menit, tidur cukup</li>
+        </ul>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-mental">
+    <h2 class="page-h">Mental & emosi</h2>
+
+    <div class="card">
+      <div class="card-title">Framework STOP</div>
+      <div class="stop-grid">
+        <div class="stop-card"><div class="stop-letter">S</div><h4>Stop</h4><p>Berhenti dulu. Tarik napas 3 detik sebelum reaksi.</p></div>
+        <div class="stop-card"><div class="stop-letter">T</div><h4>Think</h4><p>Apa yang kejadian? Apa yang lu rasain? Apa yang lu mau?</p></div>
+        <div class="stop-card"><div class="stop-letter">O</div><h4>Options</h4><p>Cari minimal 3 cara buat respon. Jangan cuma satu.</p></div>
+        <div class="stop-card"><div class="stop-letter">P</div><h4>Pick</h4><p>Pilih salah satu, tanggung jawab. Nggak ada yang sempurna.</p></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Journaling hari ini</div>
+      <p class="text2 mb-2">Tulis satu emosi paling kuat hari ini, sama alasannya.</p>
+      <textarea id="journalBox" placeholder="Hari ini gue ngerasa..."></textarea>
+      <button class="btn mt-2" onclick="saveJournal()">Simpan journal</button>
+      <p class="text2 mt-2" id="journalSaved"></p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Mood hari ini</div>
+      <div class="mood-row" id="moodRow">
+        <button class="mood-btn" data-mood="1" onclick="setMood(1)">😞</button>
+        <button class="mood-btn" data-mood="2" onclick="setMood(2)">😐</button>
+        <button class="mood-btn" data-mood="3" onclick="setMood(3)">🙂</button>
+        <button class="mood-btn" data-mood="4" onclick="setMood(4)">😄</button>
+        <button class="mood-btn" data-mood="5" onclick="setMood(5)">🔥</button>
+      </div>
+      <div class="mood-trail" id="moodTrail"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Reminder</div>
+      <div class="text2">Dewasa itu milih reaksi, bukan reaksi otomatis. Marah itu data, bukan tindakan.</div>
+    </div>
+  </div>
+
+  <div class="page" id="page-habit">
+    <h2 class="page-h">Habit tracker</h2>
+    <div class="stats">
+      <div class="stat"><div class="stat-label">Hari ini</div><div class="stat-value teal" id="statHabitToday">0/10</div></div>
+      <div class="stat"><div class="stat-label">Total hari</div><div class="stat-value amber" id="statDays">1</div></div>
+    </div>
+    <div class="card" id="habitList"></div>
+    <div class="card">
+      <button class="btn ghost" onclick="exportData()">Download backup</button>
+      <button class="btn ghost mt-2" onclick="document.getElementById('importFile').click()">Import backup</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+      <button class="btn danger mt-2" onclick="resetAll()">Hapus semua data</button>
+    </div>
+  </div>
+
+  <div class="page" id="page-skill">
+    <h2 class="page-h">Skill TKJ</h2>
+    <div class="card"><div class="card-title">Target 90 hari</div><div id="skillList"></div></div>
+    <div class="card">
+      <div class="card-title">Catatan belajar</div>
+      <textarea id="skillNotes" placeholder="Apa yang lu pelajarin hari ini?"></textarea>
+      <button class="btn mt-2" onclick="saveSkillNotes()">Simpan catatan</button>
+      <p class="text2 mt-2" id="skillSaved"></p>
+    </div>
+  </div>
+
+  <div class="page" id="page-info">
+    <h2 class="page-h">Info & setup</h2>
+    <div class="card">
+      <div class="card-title">Prinsip</div>
+      <div class="text2">1. Jangan borong<br>2. Konsisten ngalahin intensitas<br>3. Gagal sehari, lanjut besok<br>4. Track progress<br>5. Tidur itu prioritas</div>
+    </div>
+    <div class="card">
+      <div class="card-title">DNS providers</div>
+      <div class="text2" style="font-family:var(--f-mono);font-size:12.5px;line-height:2;">Cloudflare: one.one.one.one<br>Quad9: dns.quad9.net<br>AdGuard: dns.adguard-dns.com</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Status setup</div>
+      <div>
+        <span class="badge on">✓ Termux + sshd</span>
+        <span class="badge on">✓ Private DNS</span>
+        <span class="badge on">✓ HP tempur</span>
+        <span class="badge off">Termux:Widget</span>
+        <span class="badge off">Termux:Boot (skip)</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Tentang</div>
+      <div class="text2">Self-Change v2.0<br>Dibuat buat growth pribadi.<br>Data tersimpan lokal di browser lu, nggak ke-upload ke mana-mana.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="tabbar">
+  <button class="tab active" onclick="nav('dash', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
+    Home
+  </button>
+  <button class="tab" onclick="nav('fisik', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4v16M18 4v16M6 12h12M3 8v8M21 8v8"/></svg>
+    Fisik
+  </button>
+  <button class="tab" onclick="nav('mental', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M9 15c1 1 2 1.5 3 1.5s2-.5 3-1.5"/></svg>
+    Mental
+  </button>
+  <button class="tab" onclick="nav('habit', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    Habit
+  </button>
+  <button class="tab" onclick="nav('skill', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 6 6 1-4.5 4 1 6-5.5-3-5.5 3 1-6L3 9l6-1z"/></svg>
+    Skill
+  </button>
+  <button class="tab" onclick="nav('info', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+    Info
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const HABITS=[
+{id:'pushup',name:'Push-up',icon:'💪'},
+{id:'plank',name:'Plank',icon:'🧘'},
+{id:'squat',name:'Squat',icon:'🦵'},
+{id:'postur',name:'Latihan postur',icon:'📐'},
+{id:'journaling',name:'Journaling',icon:'📝'},
+{id:'baca',name:'Baca / belajar',icon:'📚'},
+{id:'termux',name:'Ngoprek Termux',icon:'💻'},
+{id:'tidur',name:'Tidur jam 11',icon:'😴'},
+{id:'air',name:'Minum air 2L',icon:'💧'},
+{id:'interaksi',name:'Interaksi sosial',icon:'💬'}
+];
+const SKILLS=[
+{id:'linux',name:'Linux dasar (command line)'},
+{id:'network',name:'Jaringan dasar (IP, subnet, DNS)'},
+{id:'termux',name:'Termux lanjutan (scripting, service)'},
+{id:'security',name:'Security dasar (TryHackMe / HTB)'},
+{id:'project',name:'Project pertama kelar'},
+{id:'portfolio',name:'Portfolio / GitHub aktif'}
+];
+const QUOTES=[
+"Progress nggak harus gede. Yang penting kebuka terus tiap hari.",
+"Streak putus bukan kiamat. Lanjut besok, jangan drama.",
+"Otot kebentuk pas tidur, bukan cuma pas latihan. Jangan begadang mulu.",
+"Bandingin diri lu sama lu minggu lalu. Udah, itu aja cukup.",
+"Marah itu sinyal, bukan perintah buat langsung meledak.",
+"16 tahun bukan waktu yang kecil. Banyak yang bisa lu bangun dari sekarang.",
+"Hari pertama nggak keliatan hasilnya. Hari ke-30 baru keliatan bedanya.",
+"Nggak perlu mood buat mulai. Mulai dulu, mood nyusul belakangan.",
+"Capek boleh istirahat. Tapi jangan dijadiin alasan berhenti total.",
+"Satu push-up hari ini lebih berarti dari seratus rencana yang nggak jalan."
+];
+const LEVELS=["Baru gas","Pemanasan","Mulai nagih","On track","Konsisten","Battle-tested","Next level","Elite mode"];
+
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function daysBetween(a,b){return Math.floor((new Date(b)-new Date(a))/86400000);}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.remove('show'),2200);}
+function buzz(ms){try{if(navigator.vibrate)navigator.vibrate(ms);}catch(e){}}
+function toggleAcc(el){const body=el.querySelector('.acc-body');const arrow=el.querySelector('.acc-head span');body.classList.toggle('open');arrow.textContent=body.classList.contains('open')?'▴':'▾';}
+
+function getData(){try{return JSON.parse(localStorage.getItem('selfchange')||'{}');}catch(e){return {};}}
+function saveData(d){try{localStorage.setItem('selfchange',JSON.stringify(d));}catch(e){}}
+
+function toggleTheme(){const d=getData();d.theme=(d.theme==='light')?'dark':'light';saveData(d);applyTheme();}
+function applyTheme(){const d=getData();document.documentElement.setAttribute('data-theme',d.theme||'dark');}
+
+function nav(page,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function getHabitLog(){const d=getData();return d.habits||{};}
+function isDone(id){return (getHabitLog()[id]||[]).includes(today());}
+function toggleHabit(id){
+  const d=getData();
+  if(!d.habits)d.habits={};
+  if(!d.habits[id])d.habits[id]=[];
+  const arr=d.habits[id];
+  const idx=arr.indexOf(today());
+  if(idx>=0){arr.splice(idx,1);}
+  else{arr.push(today());buzz(10);toast('✓ '+(HABITS.find(h=>h.id===id)?.name||id));}
+  saveData(d);
+  renderAll();
+  checkCelebration();
+}
+function getStreak(id){
+  const arr=(getHabitLog()[id]||[]).slice().sort().reverse();
+  if(!arr.length)return 0;
+  let streak=0,cur=today();
+  for(let i=0;i<365;i++){
+    if(arr.includes(cur)){streak++;const d=new Date(cur);d.setDate(d.getDate()-1);cur=d.toISOString().slice(0,10);}
+    else break;
+  }
+  return streak;
+}
+function getLongestStreak(){let max=0;HABITS.forEach(h=>{const s=getStreak(h.id);if(s>max)max=s;});return max;}
+function countToday(){return HABITS.filter(h=>isDone(h.id)).length;}
+function getDayCount(){const d=getData();if(!d.startDate){d.startDate=today();saveData(d);}return daysBetween(d.startDate,today())+1;}
+function getTotalCheckins(){const log=getHabitLog();return Object.values(log).reduce((s,a)=>s+(a?a.length:0),0);}
+function getLevel(){const idx=Math.min(Math.floor(getTotalCheckins()/12),LEVELS.length-1);return {num:idx+1,title:LEVELS[idx]};}
+
+function getLastNDays(n){
+  const arr=[];
+  for(let i=n-1;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    arr.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
+  }
+  return arr;
+}
+
+function setMood(m){const d=getData();if(!d.moods)d.moods={};d.moods[today()]=m;saveData(d);buzz(8);renderMood();renderMoodTrail();toast('Mood tersimpan');}
+function renderMood(){const d=getData();const m=(d.moods||{})[today()];document.querySelectorAll('.mood-btn').forEach(b=>b.classList.toggle('selected',parseInt(b.dataset.mood)===m));}
+function renderMoodTrail(){
+  const dates=getLastNDays(7);const d=getData();const moods=d.moods||{};
+  const EMO={1:'😞',2:'😐',3:'🙂',4:'😄',5:'🔥'};
+  const el=document.getElementById('moodTrail');
+  if(el)el.innerHTML=dates.map(ds=>'<span>'+(EMO[moods[ds]]||'·')+'</span>').join('');
+}
+
+function saveJournal(){
+  const box=document.getElementById('journalBox');const d=getData();
+  if(!d.journals)d.journals={};
+  d.journals[today()]=box.value;
+  saveData(d);
+  document.getElementById('journalSaved').textContent='Tersimpan '+new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+  toast('Journal tersimpan');
+}
+function loadJournal(){const d=getData();const j=(d.journals||{})[today()];if(j)document.getElementById('journalBox').value=j;}
+
+function toggleSkill(id){const d=getData();if(!d.skills)d.skills={};d.skills[id]=!d.skills[id];saveData(d);renderSkills();toast(d.skills[id]?'Skill kelar':'Dibatalin');}
+function saveSkillNotes(){const d=getData();d.skillNotes=document.getElementById('skillNotes').value;saveData(d);document.getElementById('skillSaved').textContent='Tersimpan';toast('Catatan tersimpan');}
+function loadSkillNotes(){const d=getData();document.getElementById('skillNotes').value=d.skillNotes||'';}
+
+function checkCelebration(){
+  const d=getData();
+  if(countToday()===HABITS.length && d.celebratedDate!==today()){
+    d.celebratedDate=today();saveData(d);
+    toast('🔥 Semua checklist beres. Gas terus, bre.');
+    const ring=document.getElementById('ringDash');
+    if(ring){ring.classList.add('pulse');setTimeout(()=>ring.classList.remove('pulse'),1100);}
+  }
+}
+
+function renderDashboard(){
+  const h=new Date().getHours();
+  let greet='halo, bre';
+  if(h<11)greet='pagi, bre';else if(h<15)greet='siang, bre';else if(h<19)greet='sore, bre';else greet='malam, bre';
+  document.getElementById('greeting').textContent=greet;
+
+  const d=new Date();
+  document.getElementById('dateText').textContent='// '+d.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('dayCount').textContent='Hari '+getDayCount();
+  const lv=getLevel();
+  document.getElementById('lvBadge').textContent='Level '+lv.num+': '+lv.title;
+
+  const done=countToday(),total=HABITS.length,pct=Math.round((done/total)*100);
+  document.getElementById('statToday').textContent=done+'/'+total;
+  document.getElementById('statStreak').textContent=getLongestStreak();
+  document.getElementById('ringPct').textContent=pct+'%';
+  document.getElementById('ringDash').style.background='conic-gradient(var(--accent2) '+pct+'%, var(--border) '+pct+'%)';
+
+  const dash=document.getElementById('dashHabits');
+  dash.innerHTML='';
+  HABITS.slice(0,5).forEach(h=>{
+    const dn=isDone(h.id);
+    const div=document.createElement('div');
+    div.className='habit-item';
+    div.innerHTML='<div class="habit-left"><div class="habit-check '+(dn?'done':'')+'" onclick="toggleHabit(\''+h.id+'\')"></div><div class="habit-name '+(dn?'done':'')+'">'+h.name+'</div></div>';
+    dash.appendChild(div);
+  });
+
+  document.getElementById('quoteBox').textContent=QUOTES[getDayCount()%QUOTES.length];
+  renderWeekChart();
+}
+
+function renderWeekChart(){
+  const dates=getLastNDays(7);const log=getHabitLog();
+  const wrap=document.getElementById('weekChart');
+  if(!wrap)return;
+  wrap.innerHTML='';
+  dates.forEach(ds=>{
+    const count=HABITS.filter(h=>(log[h.id]||[]).includes(ds)).length;
+    const pct=Math.round((count/HABITS.length)*100);
+    const day=parseInt(ds.slice(8,10),10);
+    const isToday=ds===today();
+    const col=document.createElement('div');
+    col.className='wk-col';
+    col.innerHTML='<div class="wk-bar-wrap"><div class="wk-bar '+(isToday?'today':'')+'" style="height:'+Math.max(pct,4)+'%"></div></div><div class="wk-label '+(isToday?'today':'')+'">'+day+'</div>';
+    wrap.appendChild(col);
+  });
+}
+
+function renderHabits(){
+  const list=document.getElementById('habitList');
+  list.innerHTML='';
+  HABITS.forEach(h=>{
+    const dn=isDone(h.id),streak=getStreak(h.id);
+    const div=document.createElement('div');
+    div.className='habit-item';
+    div.innerHTML='<div class="habit-left"><div class="habit-check '+(dn?'done':'')+'" onclick="toggleHabit(\''+h.id+'\')"></div><div class="habit-name '+(dn?'done':'')+'">'+h.icon+' '+h.name+'</div></div><div class="habit-streak">'+(streak>0?'🔥 '+streak:'')+'</div>';
+    list.appendChild(div);
+  });
+  document.getElementById('statHabitToday').textContent=countToday()+'/'+HABITS.length;
+  document.getElementById('statDays').textContent=getDayCount();
+}
+
+function renderSkills(){
+  const d=getData();const skills=d.skills||{};
+  const list=document.getElementById('skillList');
+  list.innerHTML='';
+  SKILLS.forEach(s=>{
+    const dn=skills[s.id];
+    const div=document.createElement('div');
+    div.className='habit-item';
+    div.innerHTML='<div class="habit-left"><div class="habit-check '+(dn?'done':'')+'" onclick="toggleSkill(\''+s.id+'\')"></div><div class="habit-name '+(dn?'done':'')+'">'+s.name+'</div></div>';
+    list.appendChild(div);
+  });
+}
+
+function renderAll(){renderDashboard();renderHabits();renderSkills();renderMood();renderMoodTrail();}
+
+function exportData(){
+  const d=getData();
+  const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='selfchange-backup-'+today()+'.json';a.click();
+  URL.revokeObjectURL(url);
+  toast('Backup kedownload');
+}
+function importData(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(ev)=>{
+    try{const d=JSON.parse(ev.target.result);saveData(d);applyTheme();renderAll();loadJournal();loadSkillNotes();toast('Data ke-import');}
+    catch(err){toast('File rusak');}
+  };
+  reader.readAsText(file);
+}
+function resetAll(){
+  if(confirm('Hapus semua data? Nggak bisa dibalikin.')){localStorage.removeItem('selfchange');location.reload();}
+}
+
+function init(){
+  applyTheme();
+  const d=getData();
+  if(!d.startDate){d.startDate=today();saveData(d);}
+  renderAll();
+  loadJournal();
+  loadSkillNotes();
+}
+init();
+</script>
+</body>
+</html>
